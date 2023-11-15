@@ -42,7 +42,7 @@ public class User implements UserDetails {
     private String city;
     @Enumerated(EnumType.STRING)
      private Role role;
-    private Boolean enabled;
+    private Boolean enabled = false;
 
 
     @Override
@@ -77,6 +77,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return false ;
+        return enabled;
     }
 }

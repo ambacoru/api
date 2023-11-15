@@ -15,6 +15,7 @@ import ru.ambaco.cmr.email.EmailSender;
 import ru.ambaco.cmr.entities.ConfirmationToken;
 import ru.ambaco.cmr.entities.Role;
 import ru.ambaco.cmr.entities.User;
+import ru.ambaco.cmr.exception.EmailNotVerifiedException;
 import ru.ambaco.cmr.exception.UserAlreadyExistsException;
 import ru.ambaco.cmr.repositories.UserRepository;
 
@@ -35,6 +36,7 @@ public class AuthenticationService {
     private final UserService userService;
 
 
+
     public AuthenticationResponse registration(UserDto userDto){
         Optional<User> userEmail = this.userRepository.findByEmail(userDto.getEmail());
 
@@ -50,7 +52,6 @@ public class AuthenticationService {
    user.setBirthDay(userDto.getBirthDay());
    user.setGender(userDto.getGender());
    user.setEmail(userDto.getEmail());
-   user.setEnabled(false);
    user.setPassword(passwordEncoder.encode(userDto.getPassword()));
    user.setRole(Role.USER);
       userRepository.save(user);
@@ -73,6 +74,9 @@ public class AuthenticationService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword())
         );
         var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+        if(!user.isEnabled()){
+            throw  new EmailNotVerifiedException(" Email not verified for user");
+        }
         var jwtToken = jwtTokenUtil.generateToken(user);
         return AuthenticationResponse.builder()
                 .token(jwtToken)

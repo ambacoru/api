@@ -14,12 +14,6 @@ public class UserService {
     private final ConfirmationTokenService confirmationTokenService;
     private final UserRepository userRepository;
 
-    public void saveConfirmationToken(User appUser, String token) {
-        ConfirmationToken confirmationToken = new ConfirmationToken(token, LocalDateTime.now(),
-                LocalDateTime.now().plusMinutes(15), appUser);
-        confirmationTokenService.saveConfirmationToken(confirmationToken);
-    }
-
     public int enableAppUser(String email) {
         return userRepository.enableAppUser(email);
 
