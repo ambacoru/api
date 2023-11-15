@@ -8,45 +8,29 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import ru.ambaco.cmr.config.jwt.JwtTokenFilter;
-import ru.ambaco.cmr.entities.Role;
-import ru.ambaco.cmr.service.UserService;
-
+import ru.ambaco.cmr.repositories.UserRepository;
 
 @Configuration
-@EnableWebSecurity
 @RequiredArgsConstructor
 public class ApplicationConfig {
 
-    private  final JwtTokenFilter jwtTokenFilter;
-    private final UserService userService;
+    private  final UserRepository userRepository;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws  Exception{
-                httpSecurity.csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests( authorise-> authorise
-                        .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/v1/admin").hasAnyAuthority(Role.ADMIN.name())
-                        .requestMatchers("/api/v1/user").hasAnyAuthority(Role.USER.name())
-                        .anyRequest().authenticated())
-                        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                        .authenticationProvider(authenticationProvider())
-                        .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
-        return  httpSecurity.build();
+    UserDetailsService userDetailsService(){
+        return  username -> userRepository.findByEmail(username)
+                .orElseThrow(()-> new UsernameNotFoundException("User not found "));
     }
+
 
     @Bean
     public AuthenticationProvider authenticationProvider(){
         DaoAuthenticationProvider authenticationProvider =  new DaoAuthenticationProvider();
-        authenticationProvider.setUserDetailsService(userService.userDetailsService());
+        authenticationProvider.setUserDetailsService(userDetailsService());
         authenticationProvider.setPasswordEncoder( passwordEncoder());
         return  authenticationProvider;
     }
